@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Shopping Cart</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+html, body {
+    height: 100%;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Ubuntu', sans-serif;
+    display: grid;
+    place-items: center;
+    background: #f8f8f8;
+}
+
+button {
+    cursor: pointer;
+    background: rgba(0, 47, 255, 0.85);
+    color: #f9f9f9;
+    border: 0;
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-size: 16px;
+    position: relative;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+button:hover {
+    background: rgba(0, 47, 255, 1);
+    transform: translateY(-2px);
+}
+
+.badge {
+    position: absolute;
+    top: -8px;
+    right: -10px;
+    background: rgba(255,255,255,0.3);
+    color: #002fff;
+    border-radius: 50%;
+    padding: 4px;
+    font-size: 12px;
+    min-width: 20px;
+    text-align: center;
+    font-weight:bolder;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.4);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.badge.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* modal backdrop */
+.modal-background {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.2);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s;
+}
+body.open .modal-background {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* modal container */
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255,255,255,0.2);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #333;
+    width: 90%;
+    max-width: 400px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+body.open .modal {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal h2 {
+    margin: 20px;
+    font-weight: 500;
+    font-size: 22px;
+    color: #000;
+}
+
+/* cart items container with soft scroll */
+.cart-items {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 20px;
+}
+.cart-items::-webkit-scrollbar {
+    width: 6px;
+}
+.cart-items::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+}
+
+/* individual cart item with glass card style */
+.cart-item {
+    background: rgba(255,255,255,0.35);
+    border-radius: 16px;
+    padding: 14px;
+    margin: 12px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    border: 1px solid rgba(255,255,255,0.4);
+    transition: transform 0.2s;
+}
+.cart-item:hover {
+    transform: scale(1.015);
+}
+.cart-item .top {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 500;
+    font-size: 16px;
+    color: #000;
+}
+.cart-item .bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.quantity {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.qty-btn {
+    background: rgba(255,255,255,0.8);
+    color: #000;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 20px;
+    border: 1px solid rgba(0,0,0,0.1);
+    line-height: 30px;
+    padding: 0;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.qty-btn:hover {
+    background: rgba(255,255,255,1);
+}
+.remove {
+    cursor: pointer;
+    font-size: 22px;
+    color: #000;
+    transition: color 0.2s;
+}
+.remove:hover {
+    color: red;
+}
+
+/* footer with total + checkout */
+.footer {
+    padding: 16px 20px;
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.3);
+}
+.footer button {
+    background: rgba(0,47,255,0.9);
+    color: #fff;
+    border-radius: 12px;
+    padding: 8px 18px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+.footer button:hover {
+    background: rgba(0,47,255,1);
+}
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+.badge.pulse {
+    animation: pulse 0.4s ease;
+}
+
+</style>
+
+</head>
+<body class="closed">
+
+    <button onclick="toggleModal()" id="cartButton">
+        Shopping Cart
+        <span class="badge" id="cartBadge">0</span>
+    </button>
+
+    <div class="modal-background" onclick="toggleModal()"></div>
+
+    <div class="modal">
+        <h2>Your Cart</h2>
+        <div class="cart-items" id="cartItems"></div>
+
+            <div class="footer"> Total: $<span id="cartTotal">0.00</span></div>
+            <button onclick="checkout()">Checkout</button>
+
+    </div>
+
+    <script>
+        // this would be dynamically fetched from your API
+        let cart = []; 
+
+        async function loadCartFromAPI() {
+            // Simulate fetch
+            cart = await new Promise(res => setTimeout(() => res([
+                { name: "Med A", qty: 1, price: 5 },
+                { name: "Med B", qty: 2, price: 7 },
+                { name: "Med C", qty: 1, price: 10 },
+                { name: "Med D", qty: 1, price: 10 },
+                { name: "Med E", qty: 1, price: 10 },
+                { name: "Med F", qty: 1, price: 10 }
+            ]), 500));
+            updateCartDisplay();
+        }
+
+        const toggleModal = () => {
+            document.body.classList.toggle("open");
+            if(document.body.classList.contains("open")) updateCartDisplay();
+        }
+
+        function updateCartDisplay() {
+            const cartItemsDiv = document.getElementById("cartItems");
+            cartItemsDiv.innerHTML = "";
+            let total = 0;
+            cart.forEach((item, index) => {
+                const itemTotal = item.qty * item.price;
+                total += itemTotal;
+                const div = document.createElement("div");
+                div.className = "cart-item";
+                div.innerHTML = `
+                    <div class="top">
+                        <div>${item.name}</div>
+                        <div>$${itemTotal}</div>
+                    </div>
+                    <div class="bottom">
+                        <div class="quantity">
+                            <button class="qty-btn" onclick="changeQty(${index}, -1)">-</button>
+                            <div>${item.qty}</div>
+                            <button class="qty-btn" onclick="changeQty(${index}, 1)">+</button>
+                        </div>
+                        <div class="remove" onclick="removeItem(${index})">🗑️</div>
+                    </div>
+                `;
+                cartItemsDiv.appendChild(div);
+            });
+            document.getElementById("cartTotal").innerText = total.toFixed(2);
+            updateCartButtonCount();
+        }
+
+        function updateCartButtonCount() {
+    const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+    const badge = document.getElementById("cartBadge");
+    badge.innerText = totalQty;
+    if (totalQty > 0) {
+        badge.classList.add("show");
+    } else {
+        badge.classList.remove("show");
+    }
+}
+
+
+        function changeQty(index, delta) {
+            if (cart[index].qty + delta > 0) {
+                cart[index].qty += delta;
+            } else {
+                cart.splice(index, 1);
+            }
+            updateCartDisplay();
+        }
+
+        function removeItem(index) {
+            cart.splice(index, 1);
+            updateCartDisplay();
+        }
+
+        function checkout() {
+            alert("Proceeding to checkout with total $" + document.getElementById("cartTotal").innerText);
+        }
+
+        // initialize from API
+        loadCartFromAPI();
+    </script>
+</body>
+</html>
